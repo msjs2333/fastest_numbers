@@ -76,7 +76,8 @@ def base_syllables(n):
     
     # For numbers >= 100, find the appropriate large name
     large_index = 0
-    while large_index + 1 < len(large_names) and large_names[large_index+1][2] <= n:
+    while (large_index + 1 < len(large_names) and 
+           large_names[large_index+1][2] <= n):
         large_index += 1
 
     n_mod = n % large_names[large_index][2]
@@ -103,8 +104,9 @@ def base_syllables(n):
     connect_word, connect_syllables = "", 0
     
     # Special case: need 零 (zero) when there are missing place values
-    # e.g., 101 = 一百零一 (one-hundred-zero-one)
-    if n_mod < 10 and large_index >= 0:
+    # e.g., 101 = 一百零一 (one-hundred-zero-one), 1001 = 一千零一
+    # This only applies when n_mod < 10, meaning we're skipping tens place
+    if n_mod < 10:
         connect_word = "零"
         connect_syllables = 1
 
@@ -169,7 +171,9 @@ def number_names_generator(leave_point,max_number):
         { "id": "*", "syllables": 1, "text": "乘", "suffix": "", "pemdas_left": 3,"pemdas_right": 3,"pemdas_result": 3},
         { "id": "-", "syllables": 1, "text": "减", "suffix": "", "pemdas_left": 5,"pemdas_right": 4,"pemdas_result": 5},
         { "id": "/", "syllables": 2, "text": "除以", "suffix": "", "pemdas_left": 3,"pemdas_right": 2,"pemdas_result": 4},
-        { "id": "fraction", "syllables": 0, "text": "分之", "suffix": "", "pemdas_left": 2,"pemdas_right": 0,"pemdas_result": 2},
+        # Fraction operation: syllables=0 because we directly concatenate numerator + denominator_word
+        # without adding operation words. E.g., "九十半" (90 halves) = 90/2, which is 2 syllables total.
+        { "id": "fraction", "syllables": 0, "text": "", "suffix": "", "pemdas_left": 2,"pemdas_right": 0,"pemdas_result": 2},
         { "id": "^", "syllables": 2, "text": "的", "suffix": "次方","pemdas_left": 2, "pemdas_right": 0,"pemdas_result": 2},
     ]
 
@@ -224,11 +228,11 @@ def number_names_generator(leave_point,max_number):
                         
                         # Construct Chinese name
                         if op["id"] == "fraction":
-                            # Chinese fractions: denominator + 分之 + numerator
-                            # e.g., 1/2 = 二分之一 (two parts of one)
-                            new_name = (number_names[right_value]["names"][op["pemdas_right"]]
-                                        + op["text"] 
-                                        + number_names[left_value]["names"][op["pemdas_left"]]
+                            # Chinese fractions in this context work like: numerator + denominator_word
+                            # e.g., 64/2 = 六十四半 (64 halves)
+                            # Note: right_value uses index 0 which gives special forms like 半 (half)
+                            new_name = (number_names[left_value]["names"][op["pemdas_left"]]
+                                        + number_names[right_value]["names"][op["pemdas_right"]]
                                         + op["suffix"])
                         else:
                             new_name = (number_names[left_value]["names"][op["pemdas_left"]] 
